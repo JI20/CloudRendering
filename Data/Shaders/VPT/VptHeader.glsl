@@ -111,7 +111,15 @@ layout (binding = 3) uniform Parameters {
     float sheenTint;
     vec3 camForward;
     float clearcoat;
+    
     float clearcoatGloss;
+    float ior;
+    float specTrans;
+    float diffTrans;
+
+    float flatness;
+    float scatterDistance;
+    bool thin;
 } parameters;
 
 layout (binding = 4) uniform FrameInfo {

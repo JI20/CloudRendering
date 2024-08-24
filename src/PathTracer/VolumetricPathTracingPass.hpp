@@ -407,6 +407,14 @@ private:
     float clearcoat = 0.0;
     float clearcoatGloss = 1.0;
 
+    // Disney BSDF (2015)
+    float ior = 1.5;
+    float specTrans = 0.5;
+    float diffTrans = 0.5;
+    float flatness = 0.0;
+    float scatterDistance = 0.5;
+    bool thin = false;
+
     float headlightSpotTotalWidth = 0.0981747704;
     float headlightSpotFalloffStart = 0.0245436926;
 
@@ -467,6 +475,7 @@ private:
 
         // Clip Plane
         int useClipPlane;
+        
         glm::vec3 clipPlaneNormal;
         float clipPlaneDistance;
 
@@ -475,14 +484,24 @@ private:
         float metallic = 0.0;
         float specular = 0.5;
         float specularTint = 0.0;
+        
         float roughness = 0.5;
         float anisotropic = 0.0;
         float sheen = 0.0;
         float sheenTint = 0.5;
+        
         glm::vec3 camForward;
         float clearcoat = 0.0;
+
         float clearcoatGloss = 1.0;
-        float pad15, pad16, pad17;
+        float ior = 1.5;
+        float specTrans = 0.5;
+        float diffTrans = 0.5;
+
+        float flatness = 0.0;
+        float scatterDistance = 0.5;
+        bool thin = false;
+        float pad15;
     };
     UniformData uniformData{};
     sgl::vk::BufferPtr uniformBuffer;

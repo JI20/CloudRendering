@@ -92,10 +92,10 @@ struct IsosurfaceSettings {
 };
 
 enum class SurfaceBrdf {
-    LAMBERTIAN, BLINN_PHONG, DISNEY, COOK_TORRANCE, AMBIENT
+    LAMBERTIAN, BLINN_PHONG, DISNEY, COOK_TORRANCE, AMBIENT, DISNEY_TEST
 };
 const char* const SURFACE_BRDF_NAMES[] = {
-        "Lambertian", "Blinn Phong", "Disney (2012)", "Cook Torrance", "Ambient"
+        "Lambertian", "Blinn Phong", "Disney (2012)", "Cook Torrance", "Ambient", "Disney BSDF (2015)"
 };
 
 enum class HeadlightType {
