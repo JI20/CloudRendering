@@ -973,6 +973,7 @@ vec3 sampleHemisphereCosineWeighted(vec2 xi) {
 struct flags{
     bool specularHit;
     bool clearcoatHit;
+    bool transmissionHit;
 };
 
 float sqr(float x) {
@@ -1034,7 +1035,7 @@ bool getIsoSurfaceHit(
 
     // -------------- Declarations and Preparations ------------------
 
-    flags hitFlags = flags(false, false);
+    flags hitFlags = flags(false, false, false);
     bool useMIS = false;
 
     vec3 texCoords = (currentPoint - parameters.boxMin) / (parameters.boxMax - parameters.boxMin);

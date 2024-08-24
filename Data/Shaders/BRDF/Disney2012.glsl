@@ -126,11 +126,12 @@ vec3 sample_specular_disney(vec3 viewVector, mat3 frameMatrix, float ax, float a
 
 float GTR1(float NdotH, float a) {
     // Source: https://github.com/wdas/brdf/blob/f39eb38620072814b9fbd5743e1d9b7b9a0ca18a/src/brdfs/disney.brdf#L49C1-L55C2
-
-    if (a >= 1) return 1 / PI;
+    if (a >= 1.0) {
+		return 1.0 / M_PI;
+	}
     float a2 = a * a;
-    float t = 1 + (a2 - 1) * NdotH * NdotH;
-    return (a2 - 1) / (PI * log(a2) * t);
+    float t = 1.0 + (a2 - 1.0) * NdotH * NdotH;
+    return (a2 - 1.0) / (PI * log(a2) * t);
 }
 
 // Source: https://github.com/wdas/brdf/blob/f39eb38620072814b9fbd5743e1d9b7b9a0ca18a/src/brdfs/disney.brdf#L69C1-L74C2
@@ -308,16 +309,16 @@ vec3 evaluateBrdfPdf(vec3 viewVector, vec3 lightVector, vec3 normalVector, vec3 
     // Diffuse
     
     // Base Diffuse
-    float f_d90 = 0.5 + 2 * parameters.roughness * pow(cos(theta_d), 2);
-    float f_d = (1 + (f_d90 - 1) * (pow(1 - cos(theta_l), 5.0))) * (1 + (f_d90 - 1) * (pow(1 - cos(theta_v), 5.0)));
+    float f_d90 = 0.5 + 2.0 * parameters.roughness * pow(cos(theta_d), 2.0);
+    float f_d = (1.0 + (f_d90 - 1.0) * (pow(1.0 - cos(theta_l), 5.0))) * (1.0 + (f_d90 - 1.0) * (pow(1.0 - cos(theta_v), 5.0)));
     
     // Subsurface Approximation: Inspired by Hanrahan-Krueger subsurface BRDF
-    float f_d_subsurface_90 = parameters.roughness * pow(cos(theta_d), 2);
-    float f_subsurface = (1.0 + (f_d_subsurface_90 - 1) * (pow(1 - cos(theta_l), 5.0))) * (1.0 + (f_d_subsurface_90 - 1.0) * (pow(1.0 - cos(theta_v), 5.0)));
+    float f_d_subsurface_90 = parameters.roughness * pow(cos(theta_d), 2.0);
+    float f_subsurface = (1.0 + (f_d_subsurface_90 - 1.0) * (pow(1 - cos(theta_l), 5.0))) * (1.0 + (f_d_subsurface_90 - 1.0) * (pow(1.0 - cos(theta_v), 5.0)));
     float f_d_subsurface = 1.25 * (f_subsurface * (1/max(theta_l + theta_v,0.01) - 0.5) + 0.5);
 
     // Sheen
-    float f_h = pow((1 - theta_d), 5.0);
+    float f_h = pow((1.0 - theta_d), 5.0);
     vec3 sheen = f_h * parameters.sheen * col_sheen;
 
     vec3 diffuse = (col * mix(f_d, f_d_subsurface, parameters.subsurface) + sheen) * (1.0 - parameters.metallic);
@@ -327,15 +328,15 @@ vec3 evaluateBrdfPdf(vec3 viewVector, vec3 lightVector, vec3 normalVector, vec3 
     vec3 f_specular = mix(col_spec0, vec3(1.0), f_h);
     
     // GTR2
-    float d_specular = 1 / (M_PI * ax * ay * sqr(sqr(dot(x, halfwayVector) / ax) + sqr(dot(y, halfwayVector) / ay)) + pow(theta_h, 2.0));
+    float d_specular = 1.0 / (M_PI * ax * ay * sqr(sqr(dot(x, halfwayVector) / ax) + sqr(dot(y, halfwayVector) / ay)) + pow(theta_h, 2.0));
 
     // Specular G Smith G GGX
-    float g_specular = 1 / (theta_v + sqrt(sqr(dot(x,lightVector)*ax) + sqr(dot(y,lightVector)*ay) + sqr(theta_v)));
-    g_specular *= (1 / (theta_v + sqrt(sqr(dot(x, viewVector) * ax) + sqr(dot(y, viewVector) * ay) + sqr(theta_v))));
+    float g_specular = 1.0 / (theta_v + sqrt(sqr(dot(x,lightVector)*ax) + sqr(dot(y,lightVector)*ay) + sqr(theta_v)));
+    g_specular *= (1.0 / (theta_v + sqrt(sqr(dot(x, viewVector) * ax) + sqr(dot(y, viewVector) * ay) + sqr(theta_v))));
 
-    float sinThetaH = sqrt(1-(min(NdotH*NdotH,0.95)));
+    float sinThetaH = sqrt(1.0-(min(NdotH*NdotH,0.95)));
 
-    vec3 specular = f_specular * d_specular * g_specular * 4 * NdotL * VdotH * sinThetaH;
+    vec3 specular = f_specular * d_specular * g_specular * 4.0 * NdotL * VdotH * sinThetaH;
 
     // Clearcoat
     float f_clearcoat = mix(0.04,1.0,f_h);
@@ -380,7 +381,7 @@ vec3 evaluateBrdfNee(vec3 viewVector, vec3 dirOut, vec3 dirNee, vec3 normalVecto
 vec3 computeBrdf(vec3 viewVector, out vec3 lightVector, vec3 normalVector, vec3 tangentVector, vec3 bitangentVector, mat3 frame, vec3 isoSurfaceColor, out flags hitFlags, out float samplingPDF) {
     // 1. Paper: https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
     // 2. BRDF Example Implementation (without Importance Sampling): https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf
-    float aspect = sqrt(1 - parameters.anisotropic * 0.9);
+    float aspect = sqrt(1.0 - parameters.anisotropic * 0.9);
     float ax = max(0.001, sqr(parameters.roughness) / aspect);
     float ay = max(0.001, sqr(parameters.roughness) * aspect);
 
