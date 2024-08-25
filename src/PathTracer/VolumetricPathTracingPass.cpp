@@ -1539,7 +1539,7 @@ void VolumetricPathTracingPass::loadShader() {
             customPreprocessorDefines.insert({ "SURFACE_BRDF_COOK_TORRANCE", "" });
         } else if (surfaceBrdf == SurfaceBrdf::AMBIENT) {
             customPreprocessorDefines.insert({ "SURFACE_BRDF_AMBIENT", "" });
-        } else if (surfaceBrdf == SurfaceBrdf::DISNEY_TEST) {
+        } else if (surfaceBrdf == SurfaceBrdf::DISNEY_2015) {
             customPreprocessorDefines.insert({ "SURFACE_BRDF_DISNEY_2015", "" });
         }
         if (isosurfaceType == IsosurfaceType::DENSITY) {
@@ -2694,7 +2694,7 @@ bool VolumetricPathTracingPass::renderGuiPropertyEditorNodes(sgl::PropertyEditor
             propertyEditor.endNode();
         }
 
-        if (useIsosurfaces && surfaceBrdf == SurfaceBrdf::DISNEY_TEST && propertyEditor.beginNode("Disney BSDF Parameters")) {
+        if (useIsosurfaces && surfaceBrdf == SurfaceBrdf::DISNEY_2015 && propertyEditor.beginNode("Disney BSDF Parameters")) {
             if (propertyEditor.addCheckbox(
                 "Thin Material", &thin)) {
                 setShaderDirty();

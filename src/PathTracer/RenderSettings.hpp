@@ -92,7 +92,7 @@ struct IsosurfaceSettings {
 };
 
 enum class SurfaceBrdf {
-    LAMBERTIAN, BLINN_PHONG, DISNEY, COOK_TORRANCE, AMBIENT, DISNEY_TEST
+    LAMBERTIAN, BLINN_PHONG, DISNEY, COOK_TORRANCE, AMBIENT, DISNEY_2015
 };
 const char* const SURFACE_BRDF_NAMES[] = {
         "Lambertian", "Blinn Phong", "Disney (2012)", "Cook Torrance", "Ambient", "Disney BSDF (2015)"

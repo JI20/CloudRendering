@@ -357,7 +357,7 @@ vec3 evaluateBrdfNee(vec3 viewVector, vec3 dirOut, vec3 dirNee, vec3 normalVecto
 
     vec3 halfwayVector = normalize(dirOut + viewVector);
     float cosThetaH = dot(halfwayVector, normalVector);
-    float sinThetaH = sqrt(1.0/(cosThetaH*cosThetaH));
+    float sinThetaH = sqrt(1.0 - min(cosThetaH * cosThetaH, 0.95));
 
     vec3 halfwayVectorNee  = normalize(dirNee + viewVector);
     float cosThetaHNee = dot(halfwayVectorNee, normalVector);

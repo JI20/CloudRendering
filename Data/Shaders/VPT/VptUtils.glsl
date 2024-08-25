@@ -1002,6 +1002,10 @@ float sqr(float x) {
 #include "ConstantLighting.glsl"
 #endif
 
+#ifdef SURFACE_BRDF_DISNEY_2015
+#include "Disney2015.glsl"
+#endif
+
 
 #if !defined(ISOSURFACE_USE_TF) || !defined(USE_TRANSFER_FUNCTION)
 #define isoSurfaceColorDef parameters.isoSurfaceColor
