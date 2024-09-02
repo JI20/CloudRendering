@@ -382,7 +382,7 @@ vec3 sampleSpecular(vec3 viewVector, mat3 frameMatrix) {
 }
 
 vec3 sampleSpecularTransmission(vec3 viewVector, mat3 frameMatrix) {
-	// We sample this lobe using the distribution of visible normals, proposed by Heitz (2014)
+	/* // We sample this lobe using the distribution of visible normals, proposed by Heitz (2014)
 	// https://inria.hal.science/hal-00996995v2/file/slides.pdf
 	float rscaled = parameters.thin ? ThinTransmissionRoughness(parameters.ior) : parameters.roughness;
 	
@@ -394,29 +394,77 @@ vec3 sampleSpecularTransmission(vec3 viewVector, mat3 frameMatrix) {
 	// -- Stretch the view vector so we are sampling as though roughness==1
 	float u1 = random();
 	float u2 = random();
-    vec3 v = normalize(vec3(viewVector.x * ax, viewVector.y, viewVector.z * ay));
+    vec3 viewVectorT = transpose(frameMatrix) * viewVector;
+    vec3 v = normalize(vec3(viewVectorT.x * ax, viewVectorT.y*ay, viewVectorT.z));
 
     // -- Build an orthonormal basis with v, t1, and t2
     vec3 t1 = (v.y < 0.9999) ? normalize(cross(v, vec3(0.0,1.0,0.0))) : vec3(1.0,0.0,0.0);
     vec3 t2 = cross(t1, v);
+    
+    float lensq = v.x * v.x + v.y * v.y;
+    vec3 T1 = lensq > 0.001 ? vec3(-v.y, v.x, 0.0) * (1.0 / sqrt(lensq)) : vec3(1.0, 0.0, 0.0);
+    vec3 T2 = cross(v, T1);
 
     // -- Choose a point on a disk with each half of the disk weighted proportionally to its projection onto direction v
-    float a = 1.0 / (1.0 + v.y);
+    float r = sqrt(u1);
+    float phi = 2.0 * M_PI * u2;
+    float p1 = r * cos(phi);
+    float p2 = r * sin(phi);
+    float s = 0.5 * (1.0 + v.z);
+    p2 = (1.0 - s) * sqrt(1.0 - p1 * p1) + s * p2;
+    
+    // -- Calculate the normal in this stretched tangent space
+    vec3 n = p1 * T1 + p2 * T2 + sqrt(max(0.0, 1.0 - p1 * p1 - p2 * p2)) * v;
+    vec3 ne = frameMatrix * (normalize(vec3(ax * n.x, ay * n.y, max(0.0, n.z))));
+        
+    vec3 lightVector = reflect(viewVector, ne);
+    lightVector = -vec3(lightVector.x,lightVector.y,lightVector.z);
+    
+    // -- unstretch and normalize the normal */
+    	// We sample this lobe using the distribution of visible normals, proposed by Heitz (2014)
+	
+    
+    // https://inria.hal.science/hal-00996995v2/file/slides.pdf
+    float rscaled = parameters.thin ? ThinTransmissionRoughness(parameters.ior) : parameters.roughness;
+	
+    float taspect = sqrt(1.0 - parameters.anisotropic * 0.9);
+    float ax = max(0.001, sqr(rscaled) / taspect);
+    float ay = max(0.001, sqr(rscaled) * taspect);
+
+	// https://github.com/schuttejoe/Selas/blob/56a7fab5a479ec93d7f641bb64b8170f3b0d3095/Source/Core/Shading/Ggx.cpp#L105-L126
+	// -- Stretch the view vector so we are sampling as though roughness==1
+    float u1 = random();
+    float u2 = random();
+    vec3 viewVectorT = transpose(frameMatrix)*viewVector;
+    vec3 v = normalize(vec3(viewVectorT.x * ax, viewVectorT.y*ay, viewVectorT.z));
+
+    // -- Build an orthonormal basis with v, t1, and t2
+    vec3 t1 = (v.z < 0.9999) ? normalize(cross(v, vec3(0.0, 0.0, 1.0))) : vec3(1.0, 0.0, 0.0);
+    vec3 t2 = cross(t1, v);
+
+    // -- Choose a point on a disk with each half of the disk weighted proportionally to its projection onto direction v
+    float a = 1.0 / (1.0 + v.z);
     float r = sqrt(u1);
     float phi = (u2 < a) ? (u2 / a) * M_PI : M_PI + (u2 - a) / (1.0 - a) * M_PI;
     float p1 = r * cos(phi);
-    float p2 = r * sin(phi) * ((u2 < a) ? 1.0 : v.y);
+    float p2 = r * sin(phi) * ((u2 < a) ? 1.0 : v.z);
 
     // -- Calculate the normal in this stretched tangent space
     vec3 n = p1 * t1 + p2 * t2 + sqrt(max(0.0, 1.0 - p1 * p1 - p2 * p2)) * v;
     
-    vec3 wm = normalize(vec3(ax * n.x, n.y, ay * n.z));
+    vec3 wm = frameMatrix*normalize(vec3(ax * n.x, ay * n.y, n.z));
     
-    vec3 lightVector = 2 * avoidZero(dot(viewVector, wm), 0.001) * wm - viewVector;
-    lightVector = -vec3(-lightVector.x,lightVector.y,lightVector.z);
+    // Cases: Fresnel Term for the decision: reflect or refract
+    // if refract: Transmit
+    // if 
+    
+    //vec3 lightVector = (viewVector, wm, ior);
+    //lightVector = vec3(lightVector.x, lightVector.y, -lightVector.z);
 
     // -- unstretch and normalize the normal
-    return lightVector;
+    vec3 lightVector = refract(viewVector, frameMatrix[2], 1.0);
+    
+    return viewVector;
 }
 
 vec3 sampleDiffuse(vec3 viewVector, mat3 frameMatrix) {
@@ -539,7 +587,8 @@ vec3 evaluateBrdfNee(vec3 viewVector, vec3 dirOut, vec3 dirNee, vec3 normalVecto
 // Combined Call to importance sample and evaluate BRDF
 
 vec3 computeBrdf(vec3 viewVector, out vec3 lightVector, vec3 normalVector, vec3 tangentVector, vec3 bitangentVector, mat3 frame, vec3 isoSurfaceColor, out flags hitFlags, out float samplingPDF) {
-	lightVector = sampleBrdf(viewVector, normalVector, frame, hitFlags);
+    //vec3 viewVector = -v;
+    lightVector = sampleBrdf(viewVector, normalVector, frame, hitFlags);
 
     return evaluateBrdf(lightVector, viewVector, normalVector, isoSurfaceColor, hitFlags);
 }

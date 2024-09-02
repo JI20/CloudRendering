@@ -1047,7 +1047,11 @@ bool getIsoSurfaceHit(
     vec3 surfaceNormal = computeGradient(texCoords);
 
     if (dot(w, surfaceNormal) > 0.0) {
-        surfaceNormal = -surfaceNormal;
+        #ifdef BRDF_SUPPORTS_TRANSMISSION
+            surfaceNormal = surfaceNormal;
+        #else
+            surfaceNormal = -surfaceNormal;
+        #endif
     }
 
     vec3 surfaceTangent;
@@ -1061,7 +1065,7 @@ bool getIsoSurfaceHit(
     // -------------- BRDF Sampling and Evaluation ------------------
 
     float samplingPDF;
-    colorOut = computeBrdf(normalize(-w), dirOut, surfaceNormal, surfaceTangent,
+    colorOut = computeBrdf(-w, dirOut, surfaceNormal, surfaceTangent,
                            surfaceBitangent, frame, isoSurfaceColorDef,
                            hitFlags, samplingPDF);
 
