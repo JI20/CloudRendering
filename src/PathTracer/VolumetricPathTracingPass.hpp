@@ -152,6 +152,7 @@ public:
     void setSecondaryVolumeDownscalingFactor(uint32_t ds);
     uint32_t getSecondaryVolumeDownscalingFactor();
     size_t getSecondaryVolumeSizeInBytes();
+    void setReRender();
 
     void loadEnvironmentMapImage(const std::string& filename);
     void setUseEnvironmentMapFlag(bool useEnvironmentMap);
@@ -322,6 +323,7 @@ private:
     bool useEnvironmentMapImage = false;
     BuiltinEnvMap builtinEnvMap = BuiltinEnvMap::DEFAULT;
     bool envMapImageUsesLinearRgb = false;
+    bool isEnvMapImageBlack = false; ///< Indicates whether a purely black environment map image was loaded.
     std::string environmentMapFilenameGui;
     std::string loadedEnvironmentMapFilename;
     void createEnvironmentMapOctahedralTexture(uint32_t mip_levels);
@@ -342,6 +344,7 @@ private:
     bool useHeadlightDistance = true; ///< Whether to modulate headlight intensity by distance.
     glm::vec3 headlightColor = glm::vec3(1.0f, 0.961538462f, 0.884615385f);
     float headlightIntensity = 0.5f;
+    size_t numLightsCached = 0; ///< Use lights specified in light editor widget.
 
     std::shared_ptr<NormalizeNormalsPass> normalizeNormalsPass;
     sgl::vk::BlitRenderPassPtr blitResultRenderPass;
@@ -426,6 +429,8 @@ private:
         glm::mat4 inverseViewProjMatrix;
         glm::mat4 previousViewProjMatrix;
         glm::mat4 inverseTransposedViewMatrix;
+        glm::mat4 inverseViewMatrix;
+        glm::mat4 viewMatrix;
 
         // Cloud properties
         glm::vec3 boxMin; float voxelValueMin;
@@ -464,7 +469,8 @@ private:
         float headlightIntensity = 1.0f;
         float headlightSpotTotalWidth = 0.0981747704;
         float headlightSpotFalloffStart = 0.0245436926;
-        float pad13, pad14;
+        uint32_t isEnvMapBlack = 0;
+        float pad14;
 
         // Isosurfaces.
         glm::vec3 isosurfaceColor;
