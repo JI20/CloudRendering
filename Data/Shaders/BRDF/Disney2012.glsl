@@ -63,9 +63,9 @@ float atan2(in float y, in float x) {
 
 float avoidZero(float x, float y){
     if ((abs(x) > abs(y))) {
-        return abs(x);
+        return x;
     } else {
-        return abs(y);
+        return x > 0 ? y : -y;
     }
 }
 

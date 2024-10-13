@@ -35,11 +35,15 @@ float atan2(in float y, in float x) {
     return mix(PI / 2.0 - atan(x,y), atan(y,x), s);
 }
 
-float avoidZero(float x, float y){
-    if ((abs(x) > abs(y))) {
-        return abs(x);
-    } else {
-        return abs(y);
+float avoidZero(float x, float y)
+{
+    if ((abs(x) > abs(y)))
+    {
+        return x;
+    }
+    else
+    {
+        return x > 0 ? y : -y;
     }
 }
 
@@ -287,8 +291,8 @@ vec3 evaluateSpecularTransmission(vec3 lightVector, vec3 halfwayVector, vec3 vie
     
     if (hitFlags.transmissionHit)
     {
-        samplingPDF = gl * d * dot(lightVector, halfwayVector) * (1.0 / absNdotL);
-        return (col * c * t * (1.0 - f) * d * gl * gv * 4.0 * absNdotL * VdotH * sinThetaH) / samplingPDF;
+        samplingPDF = dot(lightVector, halfwayVector);
+        return (col * c * t * (1.0 - f) * gv * 4.0 * absNdotL * absNdotL * VdotH * sinThetaH) / samplingPDF;
     }
 	
     return col * c * t * (1.0 - f) * d * gl * gv;
@@ -425,7 +429,7 @@ vec3 sampleSpecularTransmission(vec3 viewVector, mat3 frameMatrix) {
 	
     
     // https://inria.hal.science/hal-00996995v2/file/slides.pdf
-    float rscaled = parameters.thin ? ThinTransmissionRoughness(parameters.ior) : parameters.roughness;
+    /**float rscaled = parameters.thin ? ThinTransmissionRoughness(parameters.ior) : parameters.roughness;
 	
     float taspect = sqrt(1.0 - parameters.anisotropic * 0.9);
     float ax = max(0.001, sqr(rscaled) / taspect);
@@ -462,9 +466,44 @@ vec3 sampleSpecularTransmission(vec3 viewVector, mat3 frameMatrix) {
     //lightVector = vec3(lightVector.x, lightVector.y, -lightVector.z);
 
     // -- unstretch and normalize the normal
-    vec3 lightVector = refract(viewVector, frameMatrix[2], 1.0);
-    
-    return viewVector;
+    vec3 lightVector = refract(viewVector, frameMatrix[2], 1.0); **/
+    vec3 wi = viewVector; // Transform view vector to tangent space
+    float rscaled = parameters.thin ? ThinTransmissionRoughness(parameters.ior) : parameters.roughness;
+
+// Anisotropy and roughness calculations
+    float taspect = sqrt(1.0 - parameters.anisotropic * 0.9);
+    float ax = max(0.001, sqr(rscaled) / taspect);
+    float ay = max(0.001, sqr(rscaled) * taspect);
+    vec2 alpha = vec2(ax, ay);
+
+// Normalize the incoming direction (wi) in tangent space
+    vec3 wiStd = normalize(wi);
+
+// VNDF Sampling in tangent space
+    vec2 u = vec2(random(), random());
+    float phi = 2.0f * M_PI * u.x;
+    float z = fma((1.0f - u.y), (1.0f + wiStd.y), -wiStd.y);
+    float sinTheta = sqrt(clamp(1.0f - z * z, 0.0f, 1.0f));
+    float x = sinTheta * cos(phi);
+    float y = sinTheta * sin(phi);
+    vec3 c = vec3(x, z, y); // Sampled vector in tangent space
+
+// Construct the half-vector in tangent space
+    vec3 hStd = c + wiStd;
+
+// Apply anisotropy (stretching) in tangent space
+    vec3 wmTangent = normalize(vec3(hStd.x * ax, hStd.y, hStd.z*ay));
+
+// Transform half-vector back to world space
+    vec3 wmWorld = wmTangent; // Inverse transform to world space
+
+// Reflect the view vector around wm in world space
+    vec3 lightVector = reflect(wiStd, wmWorld);
+
+// Correct the final reflection vector (Z-axis flip for Vulkan)
+    return normalize(vec3(-lightVector.x, lightVector.y, -lightVector.z)); // Flip Z-axis only
+
+
 }
 
 vec3 sampleDiffuse(vec3 viewVector, mat3 frameMatrix) {
@@ -572,7 +611,7 @@ vec3 evaluateBrdf(vec3 lightVector, vec3 viewVector, vec3 normalVector, vec3 bas
 	// Clearcoat Lobe
     float clearcoat = evaluateClearcoat(lightVector, halfwayVector, viewVector, normalVector, samplingPDF, hitFlags);
 
-    return mix(mix(diffuse, transmission, parameters.specTrans), specularBRDF, parameters.metallic) + clearcoat;
+    return transmission;
 }
 
 // --------- BRDF PUBLIC INTERFACE --------------
